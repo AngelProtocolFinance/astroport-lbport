@@ -87,7 +87,6 @@ fn proper_initialization() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -188,7 +187,6 @@ fn provide_liquidity() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -634,7 +632,6 @@ fn withdraw_liquidity() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -777,7 +774,6 @@ fn try_native_to_token() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -984,7 +980,6 @@ fn try_token_to_native() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -1266,7 +1261,6 @@ fn test_spread() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -1424,7 +1418,6 @@ fn test_query_pool() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();
@@ -1515,7 +1508,6 @@ fn test_weight_calculations() {
         start_time,
         end_time,
         description: Some(String::from("description")),
-        commission_rate: Demical::from("0.0015"),
     };
 
     let env = mock_env();

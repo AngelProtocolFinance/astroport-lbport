@@ -10,7 +10,6 @@ pub struct InstantiateMsg {
     pub pair_code_id: u64,
     pub token_code_id: u64,
     pub owner: String,
-    pub commission_rate: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -21,16 +20,15 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         token_code_id: Option<u64>,
         pair_code_id: Option<u64>,
-        commission_rate: Option<String>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {
         /// Asset infos
         asset_infos: [WeightedAssetInfo; 2],
-        /// LBP/AMM start time
+        /// LBP start time
         start_time: u64,
-        /// LBP/AMM end time
-        end_time: Option<u64>,
+        /// LBP end time
+        end_time: u64,
         /// Pair description
         description: Option<String>,
     },
@@ -58,7 +56,6 @@ pub struct ConfigResponse {
     pub owner: Addr,
     pub pair_code_id: u64,
     pub token_code_id: u64,
-    pub commission_rate: String,
 }
 
 /// We currently take no arguments for migrations

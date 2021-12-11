@@ -37,7 +37,6 @@ pub fn instantiate(
         owner,
         token_code_id: msg.token_code_id,
         pair_code_id: msg.pair_code_id,
-        commission_rate: msg.commission_rate,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -56,15 +55,7 @@ pub fn execute(
             owner,
             token_code_id,
             pair_code_id,
-            commission_rate,
-        } => try_update_config(
-            deps,
-            info,
-            owner,
-            token_code_id,
-            pair_code_id,
-            commission_rate,
-        ),
+        } => try_update_config(deps, info, owner, token_code_id, pair_code_id),
         ExecuteMsg::CreatePair {
             asset_infos,
             start_time,
@@ -90,7 +81,6 @@ pub fn try_update_config(
     owner: Option<Addr>,
     token_code_id: Option<u64>,
     pair_code_id: Option<u64>,
-    commission_rate: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
 
@@ -107,9 +97,6 @@ pub fn try_update_config(
     if let Some(pair_code_id) = pair_code_id {
         config.pair_code_id = pair_code_id;
     }
-    if let Some(commission_rate) = commission_rate {
-        config.commission_rate = commission_rate;
-    }
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::new().add_attribute("action", "update_config"))
 }
@@ -122,7 +109,7 @@ pub fn try_create_pair(
     info: MessageInfo,
     weighted_asset_infos: [WeightedAssetInfo; 2],
     start_time: u64,
-    end_time: Option<u64>,
+    end_time: u64,
     description: Option<String>,
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
@@ -157,7 +144,6 @@ pub fn try_create_pair(
                     start_time,
                     end_time,
                     description,
-                    commission_rate: config.commission_rate,
                 })?,
                 funds: vec![],
                 label: "Astroport pair".to_string(),
@@ -238,7 +224,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: state.owner.clone(),
         token_code_id: state.token_code_id,
         pair_code_id: state.pair_code_id,
-        commission_rate: state.commission_rate,
     };
 
     Ok(resp)

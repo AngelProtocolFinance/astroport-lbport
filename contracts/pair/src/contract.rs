@@ -26,6 +26,9 @@ use astroport_lbp::token::InstantiateMsg as TokenInstantiateMsg;
 use std::ops::{Add, Div, Mul, Sub};
 use std::str::FromStr;
 
+/// Commission rate == 0.15%
+pub const COMMISSION_RATE: &str = "0.0015";
+
 // version info for migration info
 const CONTRACT_NAME: &str = "astroport-lbp-pair";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -45,19 +48,13 @@ pub fn instantiate(
         return Err(ContractError::Std(StdError::generic_err(
             "start_time is less then current time",
         )));
-    };
+    }
 
-    let end_time = match msg.end_time {
-        Some(time) => {
-            if time <= msg.start_time {
-                return Err(ContractError::Std(StdError::generic_err(
-                    "end_time is less then or same as start_time",
-                )));
-            }
-            Some(time)
-        }
-        None => None,
-    };
+    if msg.end_time <= msg.start_time {
+        return Err(ContractError::Std(StdError::generic_err(
+            "end_time is less then or same as start_time",
+        )));
+    }
 
     for asset in msg.asset_infos.iter() {
         if asset.start_weight.is_zero() {
@@ -71,12 +68,6 @@ pub fn instantiate(
                 "end_weight can not be 0",
             )));
         }
-
-        if end_time == None && asset.end_weight != asset.start_weight {
-            return Err(ContractError::Std(StdError::generic_err(
-                "pair without end_date must have equal start_weight and end_weight",
-            )));
-        }
     }
 
     let pair_info: &PairInfo = &PairInfo {
@@ -84,9 +75,8 @@ pub fn instantiate(
         liquidity_token: Addr::unchecked(""),
         asset_infos: [msg.asset_infos[0].clone(), msg.asset_infos[1].clone()],
         start_time: msg.start_time,
-        end_time: end_time,
+        end_time: msg.end_time,
         description: msg.description,
-        commission_rate: msg.commission_rate,
     };
 
     PAIR_INFO.save(deps.storage, pair_info)?;
@@ -438,7 +428,6 @@ pub fn try_swap(
         ask_pool.amount,
         ask_weight,
         offer_amount,
-        pair_info.commission_rate,
     )?;
 
     // check max spread limit if exist
@@ -557,7 +546,6 @@ pub fn query_simulation(
         ask_pool.amount,
         ask_weight,
         offer_asset.amount,
-        pair_info.commission_rate,
     )?;
 
     Ok(SimulationResponse {
@@ -614,7 +602,6 @@ pub fn query_reverse_simulation(
         ask_pool.amount,
         ask_weight,
         ask_asset.amount,
-        pair_info.commission_rate,
     )?;
 
     Ok(ReverseSimulationResponse {
@@ -660,7 +647,6 @@ pub fn compute_swap(
     ask_pool: Uint128,
     ask_weight: Decimal256,
     offer_amount: Uint128,
-    commission_rate: String,
 ) -> StdResult<(Uint128, Uint128, Uint128)> {
     // offer => ask
     let return_amount =
@@ -674,7 +660,7 @@ pub fn compute_swap(
         .checked_sub(return_amount)
         .unwrap_or_else(|_| Uint128::zero());
 
-    let commission_amount: Uint128 = return_amount * Decimal::from_str(&commission_rate).unwrap();
+    let commission_amount: Uint128 = return_amount * Decimal::from_str(COMMISSION_RATE).unwrap();
 
     // commission will be absorbed to pool
     let return_amount: Uint128 = return_amount.checked_sub(commission_amount).unwrap();
@@ -688,11 +674,10 @@ fn compute_offer_amount(
     ask_pool: Uint128,
     ask_weight: Decimal256,
     ask_amount: Uint128,
-    commission_rate: String,
 ) -> StdResult<(Uint128, Uint128, Uint128)> {
     // ask => offer
 
-    let one_minus_commission = Decimal256::one() - Decimal256::from_str(&commission_rate).unwrap();
+    let one_minus_commission = Decimal256::one() - Decimal256::from_str(COMMISSION_RATE).unwrap();
 
     let before_commission_deduction =
         ask_amount * (Decimal256::one() / one_minus_commission).into();
@@ -713,7 +698,7 @@ fn compute_offer_amount(
         .unwrap_or_else(|_| Uint128::zero());
 
     let commission_amount =
-        before_commission_deduction * Decimal::from_str(&commission_rate).unwrap();
+        before_commission_deduction * Decimal::from_str(COMMISSION_RATE).unwrap();
 
     Ok((offer_amount, spread_amount, commission_amount))
 }
@@ -787,26 +772,19 @@ fn get_current_weight(
     start_weight: Uint128,
     end_weight: Uint128,
     start_time: u64,
-    end_time: Option<u64>,
+    end_time: u64,
     block_time: u64,
 ) -> StdResult<Decimal256> {
     if block_time < start_time {
         return Err(StdError::generic_err("Sale has not started yet"));
     }
 
-    if block_time > end_time.unwrap() {
+    if block_time > end_time {
         return Err(StdError::generic_err("Sale has already finished"));
     }
 
     let start_weight_fixed = uint2dec(start_weight);
-
-    // AMM pair will not have an end time & must have equal start/end weights
-    if end_time == None {
-        let ratio = uint2dec(Uint128::zero());
-        return Ok(start_weight_fixed.sub(ratio));
-    }
-
-    let time_diff = uint2dec(Uint128::from(end_time.unwrap() - start_time));
+    let time_diff = uint2dec(Uint128::from(end_time - start_time));
 
     if end_weight > start_weight {
         let ratio = uint2dec(Uint128::from(
