@@ -27,7 +27,7 @@ use std::ops::{Add, Div, Mul, Sub};
 use std::str::FromStr;
 
 /// Commission rate == 0.15%
-pub const COMMISSION_RATE: &str = "0.0015";
+pub const COMMISSION_RATE: &str = "0.02";
 
 // version info for migration info
 const CONTRACT_NAME: &str = "astroport-lbp-pair";
