@@ -828,19 +828,21 @@ fn assert_slippage_tolerance(
             ));
         }
 
-        let one_minus_slippage_tolerance = Decimal256::one() - slippage_tolerance;
-        let deposits: [Uint256; 2] = [deposits[0].into(), deposits[1].into()];
-        let pools: [Uint256; 2] = [pools[0].amount.into(), pools[1].amount.into()];
-
-        // Ensure each prices are not dropped as much as slippage tolerance rate
-        if Decimal256::from_ratio(deposits[0], deposits[1]) * one_minus_slippage_tolerance
-            > Decimal256::from_ratio(pools[0], pools[1])
-            || Decimal256::from_ratio(deposits[1], deposits[0]) * one_minus_slippage_tolerance
-                > Decimal256::from_ratio(pools[1], pools[0])
-        {
-            return Err(StdError::generic_err(
-                "Operation exceeds max splippage tolerance",
-            ));
+        if !pools[0].amount.is_zero() && !pools[1].amount.is_zero() {
+            let one_minus_slippage_tolerance = Decimal256::one() - slippage_tolerance;
+            let deposits: [Uint256; 2] = [deposits[0].into(), deposits[1].into()];
+            let pools: [Uint256; 2] = [pools[0].amount.into(), pools[1].amount.into()];
+    
+            // Ensure each prices are not dropped as much as slippage tolerance rate
+            if Decimal256::from_ratio(deposits[0], deposits[1]) * one_minus_slippage_tolerance
+                > Decimal256::from_ratio(pools[0], pools[1])
+                || Decimal256::from_ratio(deposits[1], deposits[0]) * one_minus_slippage_tolerance
+                    > Decimal256::from_ratio(pools[1], pools[0])
+            {
+                return Err(StdError::generic_err(
+                    "Operation exceeds max splippage tolerance",
+                ));
+            }
         }
     }
 
