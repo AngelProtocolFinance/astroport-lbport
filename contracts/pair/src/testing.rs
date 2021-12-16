@@ -23,7 +23,7 @@ use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const COMMISSION_AMOUNT: u128 = 15;
+const COMMISSION_AMOUNT: u128 = 200;
 const COMMISSION_RATIO: u128 = 10000;
 const DECIMAL_FRACTIONAL: Uint128 = Uint128::new(1_000_000_000u128);
 
